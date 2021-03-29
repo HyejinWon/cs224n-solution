@@ -71,7 +71,11 @@ class ParserModel(nn.Module):
         ###     Linear Layer: https://pytorch.org/docs/stable/nn.html#torch.nn.Linear
         ###     Xavier Init: https://pytorch.org/docs/stable/nn.html#torch.nn.init.xavier_uniform_
         ###     Dropout: https://pytorch.org/docs/stable/nn.html#torch.nn.Dropout
-
+        self.embed_to_hidden = nn.Linear(self.n_features * self.embed_size, self.hidden_size)
+        nn.init.xavier_uniform_(self.embed_to_hidden, gain=1)
+        self.dropout = nn.Dropout(p=self.dropout_prob)
+        self.hidden_to_logits = nn.Linear(self.hidden_size, self.n_classes)
+        nn.init.xavier_uniform_(self.hidden_to_logits, gain=1)
 
         ### END YOUR CODE
 
@@ -103,7 +107,10 @@ class ParserModel(nn.Module):
         ###  Please see the following docs for support:
         ###     Embedding Layer: https://pytorch.org/docs/stable/nn.html#torch.nn.Embedding
         ###     View: https://pytorch.org/docs/stable/tensors.html#torch.Tensor.view
-
+        
+        x = self.pretrained_embeddings(t).view(t.size(0), -1) 
+        # self.pretrained_embeddings(t)로 하면 t에 해당하는 embedding vector를 돌려줌.
+        # 근데, return shape이 안맞으니, 변환해서 보낸다.
 
         ### END YOUR CODE
         return x
@@ -141,7 +148,8 @@ class ParserModel(nn.Module):
         ###
         ### Please see the following docs for support:
         ###     ReLU: https://pytorch.org/docs/stable/nn.html?highlight=relu#torch.nn.functional.relu
-
-
+        word_embed = self.embedding_lookup(t)
+        output = nn.ReLU(self.embed_to_hidden(word_embed))
+        logits = self.hidden_to_logits(self.dropout(output))
         ### END YOUR CODE
         return logits
